@@ -292,7 +292,15 @@ function InventoryView({ products, setProducts, setToast }) {
 /* App                                                                    */
 /* ------------------------------------------------------------------ */
 export default function App() {
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
+  const [products, setProducts] = useState(() => {
+  const saved = localStorage.getItem("products");
+
+  if (saved) {
+    return JSON.parse(saved);
+  }
+
+  return INITIAL_PRODUCTS;
+});
   const [toast, setToast] = useState(null);
 
   useEffect(() => { document.title = STORE.name; }, []);
@@ -302,6 +310,10 @@ export default function App() {
     const t = setTimeout(() => setToast(null), 3000);
     return () => clearTimeout(t);
   }, [toast]);
+
+  useEffect(() => {
+  localStorage.setItem("products", JSON.stringify(products));
+}, [products]);
 
   return (
     <div className="ts-root min-h-screen bg-stone-50">
