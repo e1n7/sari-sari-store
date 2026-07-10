@@ -30,7 +30,7 @@ function GlobalStyles() {
 /* ------------------------------------------------------------------ */
 /* Store info + data                                                    */
 /* ------------------------------------------------------------------ */
-const STORE = { name: "Sari-Sari Store" };
+const STORE = { name: "Tripple J Store" };
 
 const CATEGORY_META = {
   "Snacks & Chichirya": { icon: Cookie, grad: "from-orange-500 to-red-600" },
