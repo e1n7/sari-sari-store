@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "./supabase";
 
 import {
   Search,
@@ -240,6 +241,7 @@ function InventoryView({ products, setProducts, setToast }) {
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const filtered = products.filter((p) => {
     if (category !== "Lahat" && p.category !== category) return false;
@@ -247,29 +249,91 @@ function InventoryView({ products, setProducts, setToast }) {
     return true;
   });
 
-  const saveProduct = (form) => {
-  const payload = {
-  image: form.image,
-  name: form.name,
-  category: form.category,
-  unit: form.unit || "per piece",
-  price: Number(form.price),
-  promoPrice: form.promoPrice ? Number(form.promoPrice) : null,
-  stock: Math.max(0, Number(form.stock) || 0),
-};
-    if (modal.mode === "edit") {
-      setProducts((ps) => ps.map((p) => (p.id === modal.product.id ? { ...p, ...payload } : p)));
-      setToast("Na-update ang paninda.");
-    } else {
-      const id = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Math.random().toString(36).slice(2, 6);
-      setProducts((ps) => [{ id, ...payload }, ...ps]);
-      setToast("Naidagdag ang paninda.");
+  const saveProduct = async (form) => {
+    setIsLoading(true);
+    const payload = {
+      image: form.image,
+      name: form.name,
+      category: form.category,
+      unit: form.unit || "per piece",
+      price: Number(form.price),
+      promoPrice: form.promoPrice ? Number(form.promoPrice) : null,
+      stock: Math.max(0, Number(form.stock) || 0),
+    };
+
+    try {
+      if (modal.mode === "edit") {
+        // Update existing product in Supabase
+        const { error } = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", modal.product.id);
+
+        if (error) throw error;
+
+        setProducts((ps) => ps.map((p) => (p.id === modal.product.id ? { ...p, ...payload } : p)));
+        setToast("Na-update ang paninda.");
+      } else {
+        // Insert new product into Supabase
+        const newId = form.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Math.random().toString(36).slice(2, 6);
+        const { error } = await supabase
+          .from("products")
+          .insert([{ id: newId, ...payload }]);
+
+        if (error) throw error;
+
+        setProducts((ps) => [{ id: newId, ...payload }, ...ps]);
+        setToast("Naidagdag ang paninda.");
+      }
+      setModal(null);
+    } catch (error) {
+      console.error("Error saving product:", error);
+      setToast("May error sa pag-save ng paninda.");
+    } finally {
+      setIsLoading(false);
     }
-    setModal(null);
   };
 
-  const adjustStock = (id, delta) => {
-    setProducts((ps) => ps.map((p) => (p.id === id ? { ...p, stock: Math.max(0, p.stock + delta) } : p)));
+  const adjustStock = async (id, delta) => {
+    const product = products.find((p) => p.id === id);
+    if (!product) return;
+
+    const newStock = Math.max(0, product.stock + delta);
+
+    try {
+      const { error } = await supabase
+        .from("products")
+        .update({ stock: newStock })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setProducts((ps) => ps.map((p) => (p.id === id ? { ...p, stock: newStock } : p)));
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      setToast("May error sa pag-update ng stock.");
+    }
+  };
+
+  const deleteProduct = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", deleteTarget.id);
+
+      if (error) throw error;
+
+      setProducts((ps) => ps.filter((p) => p.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setToast("Natanggal ang paninda.");
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      setToast("May error sa pag-delete ng paninda.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -305,14 +369,14 @@ function InventoryView({ products, setProducts, setToast }) {
               <tr key={p.id} className="transition-colors duration-150 hover:bg-stone-50">
                 <td className="flex items-center gap-2 px-4 py-3">
                   {p.image ? (
-                  <img
-                src={p.image}
-                alt={p.name}
-                 className="h-8 w-8 rounded-md object-cover"
-                 />
-                ) : (
-                 <CategoryTile category={p.category} className="h-8 w-8 rounded-md" />
-               )}
+                    <img
+                      src={p.image}
+                      alt={p.name}
+                      className="h-8 w-8 rounded-md object-cover"
+                    />
+                  ) : (
+                    <CategoryTile category={p.category} className="h-8 w-8 rounded-md" />
+                  )}
                   <span className="font-medium text-stone-700">{p.name}</span>
                 </td>
                 <td className="px-4 py-3 text-stone-500">{p.category}</td>
@@ -324,16 +388,16 @@ function InventoryView({ products, setProducts, setToast }) {
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => adjustStock(p.id, -1)} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-all duration-150 hover:scale-110 hover:border-stone-300 hover:bg-stone-50"><Minus size={12} /></button>
+                    <button onClick={() => adjustStock(p.id, -1)} disabled={isLoading} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-all duration-150 hover:scale-110 hover:border-stone-300 hover:bg-stone-50 disabled:opacity-50"><Minus size={12} /></button>
                     <span className="ts-mono w-6 text-center text-sm">{p.stock}</span>
-                    <button onClick={() => adjustStock(p.id, 1)} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-all duration-150 hover:scale-110 hover:border-stone-300 hover:bg-stone-50"><Plus size={12} /></button>
+                    <button onClick={() => adjustStock(p.id, 1)} disabled={isLoading} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-all duration-150 hover:scale-110 hover:border-stone-300 hover:bg-stone-50 disabled:opacity-50"><Plus size={12} /></button>
                     <StockBadge qty={p.stock} />
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
-                    <button onClick={() => setModal({ mode: "edit", product: p })} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-all duration-150 hover:scale-110 hover:bg-stone-100 hover:text-stone-700"><Pencil size={14} /></button>
-                    <button onClick={() => setDeleteTarget(p)} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-all duration-150 hover:scale-110 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
+                    <button onClick={() => setModal({ mode: "edit", product: p })} disabled={isLoading} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-all duration-150 hover:scale-110 hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50"><Pencil size={14} /></button>
+                    <button onClick={() => setDeleteTarget(p)} disabled={isLoading} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-all duration-150 hover:scale-110 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>
@@ -354,18 +418,18 @@ function InventoryView({ products, setProducts, setToast }) {
       {modal && (
         <ProductFormModal
           initial={
-  modal.mode === "edit"
-    ? {
-        image: modal.product.image,
-        name: modal.product.name,
-        category: modal.product.category,
-        unit: modal.product.unit,
-        price: modal.product.price,
-        promoPrice: modal.product.promoPrice ?? "",
-        stock: modal.product.stock,
-      }
-    : null
-}
+            modal.mode === "edit"
+              ? {
+                  image: modal.product.image,
+                  name: modal.product.name,
+                  category: modal.product.category,
+                  unit: modal.product.unit,
+                  price: modal.product.price,
+                  promoPrice: modal.product.promoPrice ?? "",
+                  stock: modal.product.stock,
+                }
+              : null
+          }
           onClose={() => setModal(null)}
           onSave={saveProduct}
         />
@@ -377,7 +441,7 @@ function InventoryView({ products, setProducts, setToast }) {
           confirmLabel="Tanggalin"
           danger
           onCancel={() => setDeleteTarget(null)}
-          onConfirm={() => { setProducts((ps) => ps.filter((p) => p.id !== deleteTarget.id)); setDeleteTarget(null); setToast("Natanggal ang paninda."); }}
+          onConfirm={deleteProduct}
         />
       )}
     </div>
@@ -388,24 +452,41 @@ function InventoryView({ products, setProducts, setToast }) {
 /* App                                                                    */
 /* ------------------------------------------------------------------ */
 export default function App() {
-const [products, setProducts] = useState(() => {
-  const savedProducts = localStorage.getItem("products");
+  const [products, setProducts] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [toast, setToast] = useState(null);
 
-  if (savedProducts) {
-    return JSON.parse(savedProducts);
-  }
-
-return INITIAL_PRODUCTS;
-});
-
-const [toast, setToast] = useState(null);
-
-  useEffect(() => { document.title = STORE.name; }, []);
-
+  // Load products from Supabase on mount
   useEffect(() => {
-  localStorage.setItem("products", JSON.stringify(products));
-}, [products]);
+    async function loadProducts() {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*");
 
+        if (error) {
+          console.error("Error loading products:", error);
+          setToast("May error sa pag-load ng products.");
+        } else {
+          setProducts(data || []);
+        }
+      } catch (error) {
+        console.error("Error loading products:", error);
+        setToast("May error sa pag-load ng products.");
+      } finally {
+        setIsLoadingProducts(false);
+      }
+    }
+
+    loadProducts();
+  }, []);
+
+  // Set document title
+  useEffect(() => {
+    document.title = STORE.name;
+  }, []);
+
+  // Auto-dismiss toast
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(null), 3000);
@@ -423,7 +504,13 @@ const [toast, setToast] = useState(null);
         </div>
       )}
 
-      <InventoryView products={products} setProducts={setProducts} setToast={setToast} />
+      {isLoadingProducts ? (
+        <div className="flex items-center justify-center py-20">
+          <p className="text-stone-500">Nag-load ng products...</p>
+        </div>
+      ) : (
+        <InventoryView products={products} setProducts={setProducts} setToast={setToast} />
+      )}
     </div>
   );
 }
