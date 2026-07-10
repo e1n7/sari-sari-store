@@ -17,8 +17,12 @@ function GlobalStyles() {
       .ts-focus:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
       .ts-scroll::-webkit-scrollbar { height: 6px; width: 6px; }
       .ts-scroll::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 999px; }
-      .ts-toast { animation: ts-toast-in 0.2s ease-out; }
-      @keyframes ts-toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+      .ts-toast { animation: ts-toast-in 0.25s cubic-bezier(0.16, 1, 0.3, 1); transform: translate(-50%, 0); }
+      @keyframes ts-toast-in { from { opacity: 0; transform: translate(-50%, -8px) scale(0.96); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+      .ts-modal-overlay { animation: ts-overlay-in 0.15s ease-out; }
+      @keyframes ts-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+      .ts-modal-panel { animation: ts-modal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1); }
+      @keyframes ts-modal-in { from { opacity: 0; transform: scale(0.96) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
     `}</style>
   );
 }
@@ -76,24 +80,28 @@ function StockBadge({ qty }) {
   const status = stockStatusFor(qty);
   const styles = {
     Available: "bg-green-50 text-green-700 ring-green-200",
-    "Paubos na": "bg-amber-50 text-amber-700 ring-amber-200",
-    "Wala munang stock": "bg-stone-100 text-stone-500 ring-stone-200",
+    "Paubos na": "bg-amber-50 text-amber-700 ring-amber-200 animate-pulse",
+    "Wala munang stock": "bg-stone-100 text-stone-400 ring-stone-200",
   };
-  return <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ring-inset ${styles[status]}`}>{status}</span>;
+  return (
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ring-1 ring-inset transition-colors duration-150 ${styles[status]}`}>
+      {status}
+    </span>
+  );
 }
 
 function ConfirmModal({ title, message, confirmLabel = "Kumpirmahin", danger = false, onConfirm, onCancel }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-stone-900/40 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+    <div className="ts-modal-overlay fixed inset-0 z-[60] flex items-center justify-center bg-stone-900/40 p-4">
+      <div className="ts-modal-panel w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-2 flex items-center gap-2">
           <AlertTriangle size={18} className={danger ? "text-red-500" : "text-amber-500"} />
           <h3 className="ts-display text-base font-semibold text-stone-900">{title}</h3>
         </div>
         <p className="mb-5 text-sm text-stone-600">{message}</p>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="ts-focus rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">Kanselahin</button>
-          <button onClick={onConfirm} className={`ts-focus rounded-lg px-4 py-2 text-sm font-medium text-white ${danger ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-800"}`}>{confirmLabel}</button>
+          <button onClick={onCancel} className="ts-focus rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors duration-150 hover:bg-stone-50">Kanselahin</button>
+          <button onClick={onConfirm} className={`ts-focus rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors duration-150 ${danger ? "bg-red-600 hover:bg-red-700" : "bg-green-700 hover:bg-green-800"}`}>{confirmLabel}</button>
         </div>
       </div>
     </div>
@@ -123,11 +131,11 @@ function Header() {
 function ProductFormModal({ initial, onClose, onSave }) {
   const [form, setForm] = useState(initial || { name: "", category: CATEGORIES[0], unit: "per piece", price: "", promoPrice: "", stock: "" });
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4">
-      <div className="ts-scroll max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+    <div className="ts-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4">
+      <div className="ts-modal-panel ts-scroll max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="ts-display text-lg font-semibold text-stone-900">{initial ? "I-edit ang Paninda" : "Magdagdag ng Paninda"}</h3>
-          <button onClick={onClose} className="ts-focus rounded-lg p-1.5 text-stone-500 hover:bg-stone-100"><X size={18} /></button>
+          <button onClick={onClose} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-700"><X size={18} /></button>
         </div>
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
           <div>
@@ -161,8 +169,8 @@ function ProductFormModal({ initial, onClose, onSave }) {
             <input required type="number" min="0" step="1" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))} className="ts-focus w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="ts-focus rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50">Kanselahin</button>
-            <button type="submit" className="ts-focus rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700">I-save</button>
+            <button type="button" onClick={onClose} className="ts-focus rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors duration-150 hover:bg-stone-50">Kanselahin</button>
+            <button type="submit" className="ts-focus rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-stone-700">I-save</button>
           </div>
         </form>
       </div>
@@ -210,20 +218,20 @@ function InventoryView({ products, setProducts, setToast }) {
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="ts-display text-xl font-semibold text-stone-900">Mga Paninda</h1>
-        <button onClick={() => setModal({ mode: "add" })} className="ts-focus flex items-center gap-1.5 rounded-lg bg-stone-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-stone-700"><Plus size={15} /> Magdagdag</button>
+        <button onClick={() => setModal({ mode: "add" })} className="ts-focus flex items-center gap-1.5 rounded-lg bg-stone-900 px-3.5 py-2 text-sm font-medium text-white transition-all duration-150 hover:scale-[1.03] hover:bg-stone-700"><Plus size={15} /> Magdagdag</button>
       </div>
 
-      <div className="mb-3 flex items-center gap-2 rounded-xl border border-stone-200 bg-white p-2">
-        <Search size={16} className="ml-1 text-stone-400" />
-        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Maghanap ng paninda..." className="ts-focus flex-1 bg-transparent px-1 py-1 text-sm outline-none" />
+      <div className="mb-3 flex items-center gap-2 rounded-xl border border-stone-200 bg-white p-3 shadow-sm transition-all duration-150 focus-within:border-green-400 focus-within:ring-2 focus-within:ring-green-600/15">
+        <Search size={16} className="ml-1 shrink-0 text-stone-400" />
+        <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Maghanap ng paninda..." className="ts-focus flex-1 bg-transparent px-1 py-1 text-sm text-stone-700 outline-none placeholder:text-stone-400" />
       </div>
       <div className="ts-scroll mb-4 flex gap-1.5 overflow-x-auto pb-1">
         {["Lahat", ...CATEGORIES].map((c) => (
-          <button key={c} onClick={() => setCategory(c)} className={`ts-focus shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${category === c ? "bg-stone-900 text-white" : "border border-stone-200 text-stone-600 hover:bg-stone-50"}`}>{c}</button>
+          <button key={c} onClick={() => setCategory(c)} className={`ts-focus shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-150 hover:scale-105 ${category === c ? "bg-stone-900 text-white shadow-sm" : "border border-stone-200 text-stone-600 hover:border-stone-300 hover:bg-stone-50"}`}>{c}</button>
         ))}
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-stone-200">
+      <div className="overflow-x-auto rounded-2xl border border-stone-200 bg-white shadow-sm">
         <table className="w-full text-sm">
           <thead className="bg-stone-50 text-left text-xs uppercase tracking-wide text-stone-400">
             <tr>
@@ -236,35 +244,45 @@ function InventoryView({ products, setProducts, setToast }) {
           </thead>
           <tbody className="divide-y divide-stone-100">
             {filtered.map((p) => (
-              <tr key={p.id}>
+              <tr key={p.id} className="transition-colors duration-150 hover:bg-stone-50">
                 <td className="flex items-center gap-2 px-4 py-3">
                   <CategoryTile category={p.category} className="h-8 w-8 rounded-md" />
                   <span className="font-medium text-stone-700">{p.name}</span>
                 </td>
                 <td className="px-4 py-3 text-stone-500">{p.category}</td>
-                <td className="ts-mono px-4 py-3 font-semibold text-green-700">
-                  {p.promoPrice != null && <span className="mr-1.5 text-stone-400 line-through">{money(p.price)}</span>}
-                  {money(effectivePrice(p))}
+                <td className="px-4 py-3">
+                  <div className="flex items-baseline gap-1.5">
+                    {p.promoPrice != null && <span className="ts-mono text-xs text-stone-400 line-through">{money(p.price)}</span>}
+                    <span className="ts-mono font-semibold text-green-700">{money(effectivePrice(p))}</span>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <button onClick={() => adjustStock(p.id, -1)} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 hover:bg-stone-50"><Minus size={12} /></button>
+                    <button onClick={() => adjustStock(p.id, -1)} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-all duration-150 hover:scale-110 hover:border-stone-300 hover:bg-stone-50"><Minus size={12} /></button>
                     <span className="ts-mono w-6 text-center text-sm">{p.stock}</span>
-                    <button onClick={() => adjustStock(p.id, 1)} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 hover:bg-stone-50"><Plus size={12} /></button>
+                    <button onClick={() => adjustStock(p.id, 1)} className="ts-focus flex h-6 w-6 items-center justify-center rounded-full border border-stone-200 text-stone-600 transition-all duration-150 hover:scale-110 hover:border-stone-300 hover:bg-stone-50"><Plus size={12} /></button>
                     <StockBadge qty={p.stock} />
                   </div>
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
-                    <button onClick={() => setModal({ mode: "edit", product: p })} className="ts-focus rounded-lg p-1.5 text-stone-500 hover:bg-stone-100"><Pencil size={14} /></button>
-                    <button onClick={() => setDeleteTarget(p)} className="ts-focus rounded-lg p-1.5 text-red-500 hover:bg-red-50"><Trash2 size={14} /></button>
+                    <button onClick={() => setModal({ mode: "edit", product: p })} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-all duration-150 hover:scale-110 hover:bg-stone-100 hover:text-stone-700"><Pencil size={14} /></button>
+                    <button onClick={() => setDeleteTarget(p)} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-all duration-150 hover:scale-110 hover:bg-red-50 hover:text-red-600"><Trash2 size={14} /></button>
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <p className="p-8 text-center text-sm text-stone-400">Walang paninda na nahanap.</p>}
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center gap-2 px-6 py-14 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-stone-100">
+              <Search size={20} className="text-stone-400" />
+            </div>
+            <p className="ts-display text-sm font-semibold text-stone-600">Walang paninda na nahanap</p>
+            <p className="text-xs text-stone-400">Subukan ang ibang search term o piliin ang ibang kategorya.</p>
+          </div>
+        )}
       </div>
 
       {modal && (
@@ -292,15 +310,7 @@ function InventoryView({ products, setProducts, setToast }) {
 /* App                                                                    */
 /* ------------------------------------------------------------------ */
 export default function App() {
-  const [products, setProducts] = useState(() => {
-  const saved = localStorage.getItem("products");
-
-  if (saved) {
-    return JSON.parse(saved);
-  }
-
-  return INITIAL_PRODUCTS;
-});
+  const [products, setProducts] = useState(INITIAL_PRODUCTS);
   const [toast, setToast] = useState(null);
 
   useEffect(() => { document.title = STORE.name; }, []);
@@ -311,17 +321,13 @@ export default function App() {
     return () => clearTimeout(t);
   }, [toast]);
 
-  useEffect(() => {
-  localStorage.setItem("products", JSON.stringify(products));
-}, [products]);
-
   return (
     <div className="ts-root min-h-screen bg-stone-50">
       <GlobalStyles />
       <Header />
 
       {toast && (
-        <div className="ts-toast fixed left-1/2 top-16 z-50 -translate-x-1/2 rounded-xl bg-stone-900 px-4 py-2.5 text-sm font-medium text-white shadow-lg">
+        <div className="ts-toast fixed left-1/2 top-16 z-50 rounded-xl bg-stone-900 px-5 py-3 text-sm font-medium text-white shadow-xl">
           {toast}
         </div>
       )}
