@@ -252,7 +252,6 @@ function InventoryView({ products, setProducts, setToast }) {
   const saveProduct = async (form) => {
     setIsLoading(true);
     const payload = {
-      image: form.image,
       name: form.name,
       category: form.category,
       unit: form.unit || "per piece",
@@ -260,6 +259,11 @@ function InventoryView({ products, setProducts, setToast }) {
       promoPrice: form.promoPrice ? Number(form.promoPrice) : null,
       stock: Math.max(0, Number(form.stock) || 0),
     };
+    
+    // Handle image separately if provided
+    if (form.image) {
+      payload.image = form.image;
+    }
 
     try {
       if (modal.mode === "edit") {
