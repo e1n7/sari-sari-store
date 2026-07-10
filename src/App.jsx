@@ -1,7 +1,22 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
+
 import {
-  Search, X, Plus, Minus, Trash2, Pencil, AlertTriangle, Store,
-  Cookie, Package, CupSoda, Wheat, Droplets, Home as HomeIcon, Smartphone
+  Search,
+  X,
+  Plus,
+  Minus,
+  Trash2,
+  Pencil,
+  AlertTriangle,
+  Store,
+  Cookie,
+  Package,
+  CupSoda,
+  Wheat,
+  Droplets,
+  Home as HomeIcon,
+  Smartphone,
+  ImagePlus,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -129,48 +144,87 @@ function Header() {
 /* Product form modal                                                   */
 /* ------------------------------------------------------------------ */
 function ProductFormModal({ initial, onClose, onSave }) {
-  const [form, setForm] = useState(initial || { name: "", category: CATEGORIES[0], unit: "per piece", price: "", promoPrice: "", stock: "" });
+  const [form, setForm] = useState(
+    initial || {
+      image: null,
+      name: "",
+      category: CATEGORIES[0],
+      unit: "",
+      price: "",
+      promoPrice: "",
+      stock: 0,
+    }
+  );
+
+  const handleImagePick = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      setForm((prev) => ({
+        ...prev,
+        image: reader.result,
+      }));
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   return (
-    <div className="ts-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 p-4">
+    <div className="ts-modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="ts-modal-panel ts-scroll max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="ts-display text-lg font-semibold text-stone-900">{initial ? "I-edit ang Paninda" : "Magdagdag ng Paninda"}</h3>
-          <button onClick={onClose} className="ts-focus rounded-lg p-1.5 text-stone-400 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-700"><X size={18} /></button>
+          <h3 className="ts-display text-lg font-semibold text-gray-900">{initial ? "I-edit ang Paninda" : "Magdagdag ng Paninda"}</h3>
+          <button onClick={onClose} className="ts-focus rounded-lg p-1.5 text-gray-400 transition-colors duration-150 hover:bg-slate-100 hover:text-gray-700"><X size={18} /></button>
         </div>
         <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); onSave(form); }}>
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+              {form.image ? <img src={form.image} alt="preview" className="h-full w-full object-cover" /> : <ImagePlus size={20} className="text-gray-400" />}
+            </div>
+            <label className="ts-focus ts-btn cursor-pointer rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-gray-600 hover:bg-slate-50">
+              Upload image
+              <input type="file" accept="image/*" onChange={handleImagePick} className="hidden" />
+            </label>
+            {form.image && (
+              <button type="button" onClick={() => setForm((f) => ({ ...f, image: null }))} className="ts-focus text-xs font-medium text-red-500 hover:underline">Remove</button>
+            )}
+          </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-stone-500">Pangalan ng paninda</label>
-            <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="ts-focus w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+            <label className="mb-1 block text-xs font-medium text-gray-500">Pangalan ng paninda</label>
+            <input required value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="ts-focus w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-stone-500">Kategorya</label>
-              <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} className="ts-focus w-full rounded-lg border border-stone-200 px-3 py-2 text-sm">
+              <label className="mb-1 block text-xs font-medium text-gray-500">Kategorya</label>
+              <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))} className="ts-focus w-full rounded-lg border border-slate-200 px-3 py-2 text-sm">
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-stone-500">Unit (hal. per piece)</label>
-              <input value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} className="ts-focus w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+              <label className="mb-1 block text-xs font-medium text-gray-500">Unit (hal. per piece)</label>
+              <input value={form.unit} onChange={(e) => setForm((f) => ({ ...f, unit: e.target.value }))} className="ts-focus w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-xs font-medium text-stone-500">Presyo (₱)</label>
-              <input required type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} className="ts-focus w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+              <label className="mb-1 block text-xs font-medium text-gray-500">Presyo (₱)</label>
+              <input required type="number" min="0" step="0.01" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} className="ts-focus w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-stone-500">Promo price (opsyonal)</label>
-              <input type="number" min="0" step="0.01" value={form.promoPrice} onChange={(e) => setForm((f) => ({ ...f, promoPrice: e.target.value }))} className="ts-focus w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+              <label className="mb-1 block text-xs font-medium text-gray-500">Promo price (opsyonal)</label>
+              <input type="number" min="0" step="0.01" value={form.promoPrice} onChange={(e) => setForm((f) => ({ ...f, promoPrice: e.target.value }))} className="ts-focus w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-stone-500">Dami sa Stock</label>
-            <input required type="number" min="0" step="1" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))} className="ts-focus w-full rounded-lg border border-stone-200 px-3 py-2 text-sm" />
+            <label className="mb-1 block text-xs font-medium text-gray-500">Dami sa Stock</label>
+            <input required type="number" min="0" step="1" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))} className="ts-focus w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" />
           </div>
           <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={onClose} className="ts-focus rounded-lg border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 transition-colors duration-150 hover:bg-stone-50">Kanselahin</button>
-            <button type="submit" className="ts-focus rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-stone-700">I-save</button>
+            <button type="button" onClick={onClose} className="ts-focus ts-btn rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-slate-50">Kanselahin</button>
+            <button type="submit" className="ts-focus ts-btn rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700">I-save</button>
           </div>
         </form>
       </div>
@@ -194,11 +248,15 @@ function InventoryView({ products, setProducts, setToast }) {
   });
 
   const saveProduct = (form) => {
-    const payload = {
-      name: form.name, category: form.category, unit: form.unit || "per piece",
-      price: Number(form.price), promoPrice: form.promoPrice ? Number(form.promoPrice) : null,
-      stock: Math.max(0, Number(form.stock) || 0),
-    };
+  const payload = {
+  image: form.image,
+  name: form.name,
+  category: form.category,
+  unit: form.unit || "per piece",
+  price: Number(form.price),
+  promoPrice: form.promoPrice ? Number(form.promoPrice) : null,
+  stock: Math.max(0, Number(form.stock) || 0),
+};
     if (modal.mode === "edit") {
       setProducts((ps) => ps.map((p) => (p.id === modal.product.id ? { ...p, ...payload } : p)));
       setToast("Na-update ang paninda.");
@@ -246,7 +304,15 @@ function InventoryView({ products, setProducts, setToast }) {
             {filtered.map((p) => (
               <tr key={p.id} className="transition-colors duration-150 hover:bg-stone-50">
                 <td className="flex items-center gap-2 px-4 py-3">
-                  <CategoryTile category={p.category} className="h-8 w-8 rounded-md" />
+                  {p.image ? (
+                  <img
+                src={p.image}
+                alt={p.name}
+                 className="h-8 w-8 rounded-md object-cover"
+                 />
+                ) : (
+                 <CategoryTile category={p.category} className="h-8 w-8 rounded-md" />
+               )}
                   <span className="font-medium text-stone-700">{p.name}</span>
                 </td>
                 <td className="px-4 py-3 text-stone-500">{p.category}</td>
@@ -287,7 +353,19 @@ function InventoryView({ products, setProducts, setToast }) {
 
       {modal && (
         <ProductFormModal
-          initial={modal.mode === "edit" ? { name: modal.product.name, category: modal.product.category, unit: modal.product.unit, price: modal.product.price, promoPrice: modal.product.promoPrice ?? "", stock: modal.product.stock } : null}
+          initial={
+  modal.mode === "edit"
+    ? {
+        image: modal.product.image,
+        name: modal.product.name,
+        category: modal.product.category,
+        unit: modal.product.unit,
+        price: modal.product.price,
+        promoPrice: modal.product.promoPrice ?? "",
+        stock: modal.product.stock,
+      }
+    : null
+}
           onClose={() => setModal(null)}
           onSave={saveProduct}
         />
@@ -310,10 +388,23 @@ function InventoryView({ products, setProducts, setToast }) {
 /* App                                                                    */
 /* ------------------------------------------------------------------ */
 export default function App() {
-  const [products, setProducts] = useState(INITIAL_PRODUCTS);
-  const [toast, setToast] = useState(null);
+const [products, setProducts] = useState(() => {
+  const savedProducts = localStorage.getItem("products");
+
+  if (savedProducts) {
+    return JSON.parse(savedProducts);
+  }
+
+return INITIAL_PRODUCTS;
+});
+
+const [toast, setToast] = useState(null);
 
   useEffect(() => { document.title = STORE.name; }, []);
+
+  useEffect(() => {
+  localStorage.setItem("products", JSON.stringify(products));
+}, [products]);
 
   useEffect(() => {
     if (!toast) return;
