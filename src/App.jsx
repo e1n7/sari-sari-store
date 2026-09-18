@@ -59,22 +59,6 @@ const CATEGORY_META = {
 };
 const CATEGORIES = Object.keys(CATEGORY_META);
 
-const INITIAL_PRODUCTS = [
-  { id: "lucky-me-canton", name: "Lucky Me! Pancit Canton Chilimansi", category: "Canned & Instant Goods", unit: "per pack (55g)", price: 15, promoPrice: null, stock: 45 },
-  { id: "argentina-corned-beef", name: "Argentina Corned Beef 150g", category: "Canned & Instant Goods", unit: "per can", price: 48, promoPrice: null, stock: 30 },
-  { id: "piattos-cheese", name: "Piattos Cheese 40g", category: "Snacks & Chichirya", unit: "per pack", price: 22, promoPrice: 18, stock: 5 },
-  { id: "skyflakes", name: "SkyFlakes Crackers (10s)", category: "Snacks & Chichirya", unit: "per pack", price: 35, promoPrice: null, stock: 20 },
-  { id: "coke-1-5l", name: "Coca-Cola 1.5L", category: "Beverages", unit: "per bottle", price: 65, promoPrice: 60, stock: 18 },
-  { id: "kopiko-3in1", name: "Kopiko 3-in-1 Coffee", category: "Beverages", unit: "per sachet", price: 9, promoPrice: null, stock: 60 },
-  { id: "bigas", name: "Bigas (1 kilo)", category: "Rice & Staples", unit: "per kilo", price: 58, promoPrice: null, stock: 8 },
-  { id: "itlog", name: "Itlog (Eggs)", category: "Rice & Staples", unit: "per piece", price: 9, promoPrice: null, stock: 40 },
-  { id: "datu-puti", name: "Datu Puti Suka / Toyo 350ml", category: "Rice & Staples", unit: "per bottle", price: 28, promoPrice: null, stock: 15 },
-  { id: "safeguard", name: "Safeguard Bar Soap", category: "Toiletries (Tingi)", unit: "per bar", price: 24, promoPrice: null, stock: 22 },
-  { id: "sunsilk-sachet", name: "Sunsilk Shampoo", category: "Toiletries (Tingi)", unit: "per sachet", price: 7, promoPrice: null, stock: 50 },
-  { id: "candles", name: "Candles", category: "Household Items", unit: "per piece", price: 6, promoPrice: null, stock: 0 },
-  { id: "load-50", name: "Prepaid Load ₱50", category: "Load & Bills Payment", unit: "load value", price: 50, promoPrice: null, stock: 999 },
-];
-
 const money = (n) => `₱${Number(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const effectivePrice = (p) => (p.promoPrice != null ? p.promoPrice : p.price);
 const stockStatusFor = (qty) => (qty <= 0 ? "Wala munang stock" : qty < 10 ? "Paubos na" : "Available");
