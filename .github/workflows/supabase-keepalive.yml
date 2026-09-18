@@ -1,0 +1,43 @@
+name: Supabase keep-alive
+
+on:
+  # Run every three days so normal GitHub Actions scheduling delays remain
+  # comfortably inside Supabase's seven-day inactivity window.
+  schedule:
+    - cron: "23 03 */3 * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read the products table
+        env:
+          SUPABASE_REST_URL: https://uaxzgjmsqcooblaxccqc.supabase.co/rest/v1/products
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_0waeMyGiTE3-R5Y3SSYlFw_3EYTv1jj
+        run: |
+          set -euo pipefail
+          response_file="$(mktemp)"
+          trap 'rm -f "$response_file"' EXIT
+
+          http_code="$(curl --fail-with-body --silent --show-error --retry 3 --retry-delay 5 \
+            --request GET \
+            --header "apikey: ${SUPABASE_PUBLISHABLE_KEY}" \
+            --header "Authorization: Bearer ${SUPABASE_PUBLISHABLE_KEY}" \
+            --get \
+            --data-urlencode "select=id" \
+            --data-urlencode "limit=1" \
+            --output "$response_file" \
+            --write-out '%{http_code}' \
+            "$SUPABASE_REST_URL")"
+
+          if [ "$http_code" != "200" ]; then
+            echo "Supabase keep-alive failed with HTTP $http_code"
+            cat "$response_file"
+            exit 1
+          fi
+
+          echo "Supabase keep-alive succeeded: $(cat "$response_file")"
